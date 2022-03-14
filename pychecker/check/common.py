@@ -1,0 +1,179 @@
+import os
+import ast as ast39
+import time
+from typed_ast import ast27
+from collections import deque
+from urllib import request
+from compare_string_version import compareVersion
+
+
+def ast_parse(code):
+    try:
+        body = ast39.parse(code).body
+        this_ast = ast39
+    except SyntaxError:
+        try:
+            body = ast27.parse(code).body
+            this_ast = ast27
+        except SyntaxError:
+            return None, None
+    return body, this_ast
+
+
+def parse_custom_modules(path):
+    modules = list()
+    filenames = os.listdir(path)
+    for filename in filenames:
+        fullpath = os.path.join(path, filename)
+        if os.path.isdir(fullpath):
+            subs = os.listdir(fullpath)
+            if "__init__.py" not in subs:
+                continue
+            modules.append(filename)  # folder is a module
+        elif filename.endswith(".py") or filename.endswith(".so"):
+            if filename == "setup.py" or filename.startswith("__"):
+                continue
+            modules.append(filename.split(".")[0])  # py file or so file is a module
+
+    return set(modules)
+
+
+def parse_body(body, this_ast, local_modules, need_parse_func):
+    for stmt in body:
+        if stmt.__class__ == this_ast.Import:
+            for alias in stmt.names:
+                name = alias.name
+                local_modules.add((name, 0))  # abs import, level=0
+        elif stmt.__class__ == this_ast.ImportFrom:
+            module = stmt.module
+            names = {(f"{module}.{name.name}", stmt.level) for name in stmt.names}
+            local_modules = local_modules.union(names)
+        elif stmt.__class__ in [this_ast.For, this_ast.While, ast39.AsyncFor, this_ast.With, ast39.AsyncWith]:
+            local_modules = parse_body(stmt.body, this_ast, local_modules, False)
+        elif stmt.__class__ in [this_ast.FunctionDef, this_ast.ClassDef, ast39.AsyncFunctionDef] and need_parse_func:
+            # only parse func and class in setup.py
+            local_modules = parse_body(stmt.body, this_ast, local_modules, False)
+        elif stmt.__class__ == this_ast.If:
+            local_modules = parse_body(stmt.body, this_ast, local_modules, False)
+            local_modules = parse_body(stmt.orelse, this_ast, local_modules, False)
+    return local_modules
+
+
+def parse_local_import(code, local_tops, need_parse_func):
+    modules = parse_import_modules(code, need_parse_func)
+    local_modules = {module for module in modules if module[0].split(".")[0] in local_tops}
+    return list(local_modules)
+
+
+def parse_import_modules(code, need_parse_func):
+    modules = set()  # {(module name, level), ...}
+    body, this_ast = ast_parse(code)
+    if not body:
+        return set()
+    modules = parse_body(body, this_ast, modules, need_parse_func)
+    return modules
+
+
+def parse_relative_import(modules, path, root):
+    # modules: (name, level)
+    imported_modules = set()
+    for module, level in modules:
+        if level == 0:
+            imported_modules.add(module)
+            continue
+        while level > 0:
+            path = os.path.dirname(path)
+        parent_path = path.removeprefix(root)
+        parent_module = parent_path.replace(os.sep, ".")
+        module = f"{parent_module}.{module}"
+        imported_modules.add(module)
+    return list(imported_modules)
+
+
+def parse_local_path(modules, root, pyver=3.9):
+    paths = set()
+    for item in modules:
+        module_path = os.sep.join(item.split("."))
+        module_path = os.path.join(root, module_path)
+        while module_path != root:
+            if os.path.exists(module_path) and os.path.isdir(module_path):
+                init_file_path = os.path.join(module_path, "__init__.py")
+                if os.path.exists(init_file_path):
+                    paths.add(init_file_path)
+            else:
+                module_path = module_path + ".py"
+                if os.path.exists(module_path):
+                    paths.add(module_path)
+            if pyver < 3.3:
+                break
+            # Changed in Python 3.3: Parent packages are automatically imported.
+            module_path = os.path.dirname(module_path)
+
+    return paths
+
+
+def analysis(path, func, **kwargs):
+    # path: path of "setup.py"
+    # if the file<path> satisfies some attributes<func>, return True immediately
+    # else visit its imported local files, and check the attributes
+    root = os.path.dirname(path)
+    local_tops = parse_custom_modules(root)
+    targets = deque([path])
+    is_setup = True
+    visited = set()
+    while targets:
+        kwargs |= {"is_setup": is_setup}  # is_setup = True only at the first time(setup.py)
+        path = targets.popleft()
+        visited.add(path)
+        file = open(path)
+        code = "".join(file.readlines())
+        file.close()
+        if func(path, **kwargs):
+            return True
+        imported_local_modules = parse_local_import(code, local_tops, is_setup)
+        imported_local_modules = parse_relative_import(imported_local_modules, path, root)
+        new_paths = parse_local_path(imported_local_modules, root)
+        for new_path in new_paths:
+            if new_path in visited:
+                continue
+            targets.append(new_path)
+        is_setup = False
+    return False
+
+
+def crawl_content(url, retries=3):
+    for _ in range(retries):
+        try:
+            response = request.urlopen(url, timeout=15)
+            content = response.read()
+            return content
+        except Exception:
+            time.sleep(0.5)
+    return None
+
+
+def compare_version(v1, v2):
+    try:
+        result = compareVersion(v1, v2)
+    except:
+        return 0
+    if "less than" in result:
+        return -1
+    if "greater than" in result:
+        return 1
+    return 0
+
+
+def find_custom_modules(path):
+    dirs = os.listdir(path)
+    meta_dirs = list(filter(lambda x: x.endswith("-info"), dirs))
+    if len(meta_dirs) != 1:
+        return parse_custom_modules(path)
+    meta_dir = meta_dirs[0]
+    top_level = os.path.join(path, meta_dir, "top_level.txt")
+    if not os.path.exists(top_level):
+        return parse_custom_modules(path)
+    with open(top_level) as f:
+        lines = f.readlines()
+    modules = set(map(lambda x: x.strip(), lines))
+    return modules

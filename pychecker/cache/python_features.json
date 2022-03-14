@@ -1,0 +1,200 @@
+{
+  "print_exec_statement":{
+    "name": "print_exec_statement",
+    "desc": "print is a statement other than function",
+    "regex": "(print|exec) \\S*",
+    "pyver": [
+      "2.7"
+    ]
+  },
+  "xrange_function":{
+    "name": "xrange_function",
+    "desc": "has function xrange",
+    "regex": "xrange\\(.*\\)",
+    "pyver": [
+      "2.7"
+    ]
+  },
+  "nonlocal_keyword":{
+    "name": "nonlocal_keyword",
+    "desc": "has keyword nonlocal",
+    "regex": "nonlocal \\S*",
+    "pyver": [
+      "3.5",
+      "3.6",
+      "3.7",
+      "3.8",
+      "3.9"
+    ]
+  },
+  "async_keyword":{
+    "name": "async_keyword",
+    "desc": "has keyword async",
+    "regex": "async def \\S*\\(.*\\)",
+    "pyver": [
+      "3.5",
+      "3.6",
+      "3.7",
+      "3.8",
+      "3.9"
+    ]
+  },
+  "await_keyword":{
+    "name": "await_keyword",
+    "desc": "has keyword await",
+    "regex": "await \\S*",
+    "pyver": [
+      "3.5",
+      "3.6",
+      "3.7",
+      "3.8",
+      "3.9"
+    ]
+  },
+  "math/cmath.isclose function":{
+    "name": "math/cmath.isclose function",
+    "desc": "has function math.isclose, cmath.isclose",
+    "regex": "(math|cmath).isclose\\(.*\\)",
+    "pyver": [
+      "3.5",
+      "3.6",
+      "3.7",
+      "3.8",
+      "3.9"
+    ]
+  },
+  "os.scandir function":{
+    "name": "os.scandir function",
+    "desc": "has function os.scandir",
+    "regex": "os.scandir\\(.*\\)",
+    "pyver": [
+      "3.5",
+      "3.6",
+      "3.7",
+      "3.8",
+      "3.9"
+    ]
+  },
+  "function_param_annotation":{
+    "name": "function_param_annotation",
+    "desc": "use : to annotate function param's type",
+    "regex": "def \\S*\\([^\\(\\)]:[^\\(\\)]\\)",
+    "pyver": [
+      "3.5",
+      "3.6",
+      "3.7",
+      "3.8",
+      "3.9"
+    ]
+  },
+  "function_ret_annotation":{
+    "name": "function_ret_annotation",
+    "desc": "use -> to annotate function ret's type",
+    "regex": "def \\S*\\(.*\\)\\s*->.*",
+    "pyver": [
+      "3.5",
+      "3.6",
+      "3.7",
+      "3.8",
+      "3.9"
+    ]
+  },
+  "f_string":{
+    "name": "f_string",
+    "desc": "sting prefixed with f",
+    "regex": "f\\\".*{.+}.*\\\"",
+    "pyver": [
+      "3.6",
+      "3.7",
+      "3.8",
+      "3.9"
+    ]
+  },
+  "var_annotation":{
+    "name": "var_annotation",
+    "desc": "sting prefixed with f",
+    "regex": "f\\\".*{.+}.*\\\"",
+    "pyver": [
+      "3.6",
+      "3.7",
+      "3.8",
+      "3.9"
+    ]
+  },
+  "__init_subclass__classmethod":{
+    "name": "__init_subclass__classmethod",
+    "desc": "has __init_subclass__ classmethod",
+    "regex": "def __init_subclass__\\(.*\\)",
+    "pyver": [
+      "3.6",
+      "3.7",
+      "3.8",
+      "3.9"
+    ]
+  },
+  "__set_name__classmethod":{
+    "name": "__set_name__classmethod",
+    "desc": "has __set_name__ classmethod",
+    "regex": "def __set_name__\\(.*\\)",
+    "pyver": [
+      "3.6",
+      "3.7",
+      "3.8",
+      "3.9"
+    ]
+  },
+  "Postponed_Annotations":{
+    "name": "Postponed_Annotations",
+    "desc": "Postponed Evaluation of Annotations",
+    "regex": "from __future__ import annotations",
+    "pyver": [
+      "3.7",
+      "3.8",
+      "3.9"
+    ]
+  },
+  "ns_time_function":{
+    "name": "ns_time_function",
+    "desc": "has ns resolution function in time module",
+    "regex": "time\\.\\S*_ns",
+    "pyver": [
+      "3.7",
+      "3.8",
+      "3.9"
+    ]
+  },
+  "walrus_operator":{
+    "name": "walrus_operator",
+    "desc": "has walrus operator",
+    "regex": ":=",
+    "pyver": [
+      "3.8",
+      "3.9"
+    ]
+  },
+  "positional_only_param":{
+    "name": "positional_only_param",
+    "desc": "use / to annotate positional only param",
+    "regex": "def \\S*\\(.*, ?/.*\\)",
+    "pyver": [
+      "3.8",
+      "3.9"
+    ]
+  },
+  "removeprefix/suffix_method":{
+    "name": "removeprefix/suffix_method",
+    "desc": "has str.removeprefix, str.removesuffix method",
+    "regex": "\\.remove(prefix|suffix)\\(.*\\)",
+    "pyver": [
+      "3.9"
+    ]
+  },
+  "except,":{
+    "name": "except,",
+    "desc": "use , to alias exception",
+    "regex": "except [^\\(]*,\\s*[^\\)]*",
+    "pyver": [
+      "2.7"
+    ]
+  }
+}
