@@ -193,12 +193,12 @@ def get_source_url(pkg, ver):
     return None
 
 
-def download_extract_source(url, target_path):
+def download_extract_source(url, target_path, cache_path=config.CACHE_DIR):
     content = crawl_content(url)
     if not content:
         return None
     filename = url.split("/")[-1]
-    path = os.path.join("/tmp", filename)
+    path = os.path.join(cache_path, filename)
     with open(path, "wb") as f:
         f.write(content)
 
@@ -208,6 +208,6 @@ def download_extract_source(url, target_path):
     elif path.endswith(".tar.gz") or path.endswith(".tar.bz2") or path.endswith("tgz"):
         # with tarfile.open(path) as tarf:
         #     tarf.extractall(".")
-        cmd = f"cd /tmp && tar -xvf {path} >/dev/null"
+        cmd = f"cd {cache_path} && tar -xvf {path} >/dev/null"
         os.system(cmd)  # tarfile.ReadError: bad checksum
     return target_path

@@ -1,14 +1,14 @@
 import os
 import time
 import pychecker.config as config
-from pychecker.check.no_avl_resource_detection import detect_no_avl_resource_pkg, parse_comp_expr
+from pychecker.check.no_avl_resource_detection import detect_no_avl_resource_pkg, detect_no_avl_resource, parse_comp_expr
 from pychecker.check.visit_pypi import parse_whl_comp, get_source_url, download_extract_source, get_metadata, COMP
 from pychecker.check.incomp_feature_detection import detect_incomp_feature_usage
 from pychecker.check.local_comp_detection import detect_local_comp_detection
 from pychecker.check.common import find_custom_modules
 
 
-def check_pkgver(pkg, ver, cache_path=None):
+def check_pkgver(pkg, ver, cache_path=config.CACHE_DIR):
     results = [False, False, False]
     metadata = get_metadata(pkg, ver)
     if not metadata:
@@ -43,5 +43,22 @@ def check_pkgver(pkg, ver, cache_path=None):
         print("*"*10, pkg, ver, "*"*10)  # bad directory structure, need manual help!!
         return results
     results[0] = detect_incomp_feature_usage(setup_path, no_wheel_pyvers, custom_modules)
+    # TODO: remove temp files
     return results
 
+
+def check_project(path, python_requires, install_requires):
+    results = [False, False, False]
+    pyvers = set(parse_comp_expr(python_requires, config.PY_VERSIONS))
+    results[2] = detect_no_avl_resource(python_requires, install_requires)
+
+    setup_path = os.path.join(path, "setup.py")
+    if not os.path.exists(setup_path):
+        return results
+    results[1] = detect_local_comp_detection(setup_path)
+
+    custom_modules = find_custom_modules(path)
+    if not custom_modules:
+        return results
+    results[0] = detect_incomp_feature_usage(setup_path, pyvers, custom_modules)
+    return results
