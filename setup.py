@@ -11,7 +11,7 @@ desc = open(readme).read()
 setup(
     name="pychecker",
     version="0.0.1a0",
-    description="PyChecker: check whether your project's Require-Python is right",
+    description="PyChecker: check whether your project's Require-Python is correct",
     long_description=desc,
     url="https://github.com/PyVCEchecker/PyVCEchecker",
     license="MIT",

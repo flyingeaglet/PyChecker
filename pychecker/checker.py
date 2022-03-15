@@ -3,7 +3,7 @@ from pychecker.check import check_project, check_pkgver
 
 
 parser = argparse.ArgumentParser(
-    description="PyChecker: check whether your project's Require-Python is right"
+    description="PyChecker: check whether your project's Require-Python is correct"
 )
 
 package_group = parser.add_argument_group("package")

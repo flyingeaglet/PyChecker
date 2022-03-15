@@ -1,16 +1,50 @@
-### Hi there 👋
+## PyChecker
+PyChecker: check whether your project's Require-Python is correct
 
-<!--
-**PyVCEchecker/PyVCEchecker** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
+### Installation
+* Clone this repository
+```bash
+git clone https://github.com/PyVCEchecker/PyVCEchecker.git
+```
+* Install local (requires Python>=3.6)
+```bash
+cd PyVCEchecker
+python setup.py install
+```
 
-Here are some ideas to get you started:
+### Instructions
+```bash
+pychecker
 
-- 🔭 I’m currently working on ...
-- 🌱 I’m currently learning ...
-- 👯 I’m looking to collaborate on ...
-- 🤔 I’m looking for help with ...
-- 💬 Ask me about ...
-- 📫 How to reach me: ...
-- 😄 Pronouns: ...
-- ⚡ Fun fact: ...
--->
+usage: pychecker [-h] [-p PACKAGE] [-v VERSION] [-r ROOT] [-c PYTHON_REQUIRES]
+                 [-d INSTALL_REQUIRES]
+
+PyChecker: check whether your project's Require-Python is right
+
+optional arguments:
+  -h, --help            show this help message and exit
+
+package:
+  -p PACKAGE, --package PACKAGE
+                        Package name
+  -v VERSION, --version VERSION
+                        Version of the package
+
+project:
+  -r ROOT, --root ROOT  Root path of the project
+  -c PYTHON_REQUIRES, --python_requires PYTHON_REQUIRES
+                        python_requires expression
+  -d INSTALL_REQUIRES, --install_requires INSTALL_REQUIRES
+                        Path of requirements.txt
+```
+For example, 
+```bash
+pychecker -p django-chroniker -v 1.0.22
+```
+
+### Empirical Study and Experimental Result
+Our empirical study and experimental result can be found [here](https://github.com/PyVCEchecker/Study-Experiment).
+
+
+### PyPI Release
+Coming soon.
