@@ -114,6 +114,20 @@ class NoAvlTest(Test):
         return detect_no_avl_resource_pkg(pkg, ver)
 
 
+def generate_result(tests, output_path):
+    result = list()
+    for ind, project in enumerate(tests[0].data.keys()):
+        line = f"{project}"
+        for test in tests:
+            res = test.result_mat[ind]
+            line += f",{int(res[1])}"
+        line += "\n"
+        result.append(line)
+
+    with open(output_path, "w") as f:
+        f.writelines(result)
+
+
 if __name__ == '__main__':
     testA = LocalCompTest()
     testA.test()
@@ -123,3 +137,4 @@ if __name__ == '__main__':
     testC.test()
     testD = NoAvlTest()
     testD.test()
+    generate_result([testC, testA, testD], "./result-lab.csv")

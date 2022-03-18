@@ -1,7 +1,7 @@
-## PyChecker
+# PyChecker
 PyChecker: check whether your project's Require-Python is correct
 
-### Installation
+## Installation
 * Clone this repository
 ```bash
 git clone https://github.com/PyVCEchecker/PyVCEchecker.git
@@ -12,7 +12,7 @@ cd PyVCEchecker
 python setup.py install
 ```
 
-### Instructions
+## Instructions
 ```bash
 pychecker
 
@@ -42,9 +42,9 @@ For example,
 pychecker -p django-chroniker -v 1.0.22
 ```
 
-### Empirical Study and Experimental Result
+## Empirical Study and Experimental Result
 Our empirical study and experimental result can be found [here](https://github.com/PyVCEchecker/Study-Experiment).
 
 
-### PyPI Release
+## PyPI Release
 Coming soon.
