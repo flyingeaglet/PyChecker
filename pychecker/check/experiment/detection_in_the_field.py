@@ -62,7 +62,7 @@ class Detection:
         for key, value in tqdm(list(self.data.items())[start:end]):
             pkg, ver = key.split("#")
             pyvers = set(parse_comp_expr(value, config.PY_VERSIONS))
-            result = check_pkgver(pkg, ver, cache_path=self.root)
+            result = check_pkgver(pkg, ver, cache_path=self.root, save_files=True)
             if True not in result:
                 continue
             # print(key, result)

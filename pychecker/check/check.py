@@ -8,7 +8,7 @@ from pychecker.check.local_comp_detection import detect_local_comp_detection
 from pychecker.check.common import find_custom_modules
 
 
-def check_pkgver(pkg, ver, cache_path=config.CACHE_DIR):
+def check_pkgver(pkg, ver, cache_path=config.CACHE_DIR, save_files=False):
     results = [False, False, False]
     metadata = get_metadata(pkg, ver)
     if not metadata:
@@ -24,11 +24,12 @@ def check_pkgver(pkg, ver, cache_path=config.CACHE_DIR):
     path1 = os.path.join(cache_path, f"{pkg}-{ver}")
     path2 = os.path.join(cache_path, f"{pkg.replace('-', '_')}-{ver}")
     path = path1 if os.path.exists(path1) else path2
+    zip_path = ""
     if not os.path.exists(path):
         source_url = get_source_url(pkg, ver)
         if not source_url:
             return results  # no source code
-        download_extract_source(source_url, path)
+        _, zip_path = download_extract_source(source_url, path)
         time.sleep(5)
         path = path1 if os.path.exists(path1) else path2
 
@@ -43,7 +44,12 @@ def check_pkgver(pkg, ver, cache_path=config.CACHE_DIR):
         print("*"*10, pkg, ver, "*"*10)  # bad directory structure, need manual help!!
         return results
     results[0] = detect_incomp_feature_usage(setup_path, no_wheel_pyvers, custom_modules)
-    # TODO: remove temp files
+
+    if not save_files:
+        if os.path.exists(path):
+            os.rmdir(path)
+        if os.path.exists(zip_path):
+            os.rmdir(zip_path)
     return results
 
 
