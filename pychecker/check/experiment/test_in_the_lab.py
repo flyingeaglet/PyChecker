@@ -21,7 +21,7 @@ class Test:
         self.result_mat = list()  # [(answer, my_answer), ]
 
     def prepare_data(self):
-        meta_path = os.path.join(self.root, "answer.txt")
+        meta_path = os.path.join(self.root, "dataset-lab.csv")
         with open(meta_path) as f:
             metadata = f.readlines()[1:]
         data = dict()
@@ -135,6 +135,6 @@ if __name__ == '__main__':
     # testB.test()
     testC = IncompTest()
     testC.test()
-    testD = NoAvlTest()
-    testD.test()
-    generate_result([testC, testA, testD], "./result-lab.csv")
+    # testD = NoAvlTest()
+    # testD.test()
+    # generate_result([testC, testA, testD], "./result-lab.csv")

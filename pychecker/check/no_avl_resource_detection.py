@@ -119,23 +119,6 @@ def parse_dep_expr(expr):
     return dep, comp_versions[0], comp_versions[-1]
 
 
-def parse_dep_expr2(expr, pkgver):
-    # TODO: refactor
-    # dep_expr: pkg (comp_expr) [; condition] | pkg comp_expr [; condition]
-    dep, expr = split_dep_expr(expr)
-    if not dep:
-        return None, None
-
-    if dep not in pkgver:
-        return None, None
-    versions = pkgver[dep]
-    if not versions:
-        return None, None
-    comp_versions = parse_comp_expr(expr, versions)
-    comp_versions = sorted(comp_versions, key=cmp_to_key(compare_version))
-    return dep, comp_versions
-
-
 def split_dep_expr(expr):
     if ";" in expr:
         return None, None  # conditional dependency, not consider now

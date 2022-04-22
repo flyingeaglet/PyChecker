@@ -56,6 +56,10 @@ def parse_body(body, this_ast, local_modules, need_parse_func):
         elif stmt.__class__ == this_ast.If:
             local_modules = parse_body(stmt.body, this_ast, local_modules, False)
             local_modules = parse_body(stmt.orelse, this_ast, local_modules, False)
+        elif isinstance(stmt, ast39.Try) or isinstance(stmt, ast27.TryExcept):
+            local_modules = parse_body(stmt.body, this_ast, local_modules, False)
+            for handler in stmt.handlers:
+                local_modules = parse_body(handler.body, this_ast, local_modules, False)
     return local_modules
 
 
@@ -139,6 +143,78 @@ def analysis(path, func, **kwargs):
             targets.append(new_path)
         is_setup = False
     return False
+
+
+def parse_func_params(body, this_ast, func_name, analysis_func, candidates):
+    params = None
+    for node in body:
+        if isinstance(node, this_ast.If):
+            params = parse_func_params(node.body, this_ast, func_name, analysis_func, candidates)
+            if not params:
+                params = parse_func_params(node.orelse, this_ast, func_name, analysis_func, candidates)
+        elif isinstance(node, this_ast.Expr):
+            params = parse_func_params_expr(node.value, this_ast, func_name, analysis_func, candidates)
+        elif isinstance(node, this_ast.FunctionDef):
+            params = parse_func_params(node.body, this_ast, func_name, analysis_func, candidates)
+        elif isinstance(node, this_ast.Assign):
+            params = parse_func_params_expr(node.value, this_ast, func_name, analysis_func, candidates)
+        elif isinstance(node, this_ast.Return):
+            params = parse_func_params_expr(node.value, this_ast, func_name, analysis_func, candidates)
+        elif isinstance(node, ast39.Try) or isinstance(node, ast27.TryExcept):
+            params = parse_func_params(node.body, this_ast, func_name, analysis_func, candidates)
+            if not params:
+                params = parse_func_params(node.orelse, this_ast, func_name, analysis_func, candidates)
+        elif isinstance(node, this_ast.With):
+            if this_ast == ast39:
+                for item in node.items:
+                    params = parse_func_params_expr(item.context_expr, this_ast, func_name, analysis_func, candidates)
+                    if params:
+                        break
+            else:
+                params = parse_func_params_expr(node.context_expr, this_ast, func_name, analysis_func, candidates)
+            if not params:
+                params = parse_func_params(node.body, this_ast, func_name, analysis_func, candidates)
+        if params:
+            return params
+    return None
+
+
+def parse_func_params_expr(expr, this_ast, func_name, analysis_func, candidates):
+    open_params = None
+    if isinstance(expr, this_ast.Call) and analysis_func(expr.func, this_ast, candidates):
+        open_params = get_kwarg_params(expr, this_ast, func_name)
+
+    return open_params
+
+
+def get_kwarg_params(node, this_ast, func_name):
+    if isinstance(node, this_ast.Call):
+        func = node.func
+        if isinstance(func, this_ast.Attribute) and func.attr == func_name:
+            return node.keywords
+        if isinstance(func, this_ast.Name) and func.id == func_name:
+            return node.keywords
+        return get_kwarg_params(node.func, this_ast, func_name)
+    if isinstance(node, this_ast.Attribute):
+        attr = node.attr
+        if attr == func_name:
+            return node.keywords
+        return get_kwarg_params(node.value, this_ast, func_name)
+
+    return None
+
+
+def get_func(node, this_ast):
+    if isinstance(node, this_ast.Call):
+        return get_func(node.func, this_ast)
+    if isinstance(node, this_ast.Attribute):
+        attr = node.attr
+        name = get_func(node.value, this_ast)
+        func = f"{name}.{attr}"
+        return func
+    if isinstance(node, this_ast.Name):
+        return node.id
+    return None
 
 
 def crawl_content(url, retries=3):

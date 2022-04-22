@@ -75,6 +75,7 @@ def parse_if_context(if_node, this_ast):
     for node in if_node.orelse:
         if is_finish_stmt(node, this_ast):
             return True
+    return False
 
 
 def is_finish_stmt(node, this_ast):
@@ -86,7 +87,7 @@ def is_finish_stmt(node, this_ast):
         if not isinstance(value, this_ast.Call):
             return False
         func = value.func
-        # sematic analysis
+        # semantic analysis
         if isinstance(func, this_ast.Name) and "exit" in func.id:
             return True
         if isinstance(func, this_ast.Attribute) and "exit" in func.attr:
