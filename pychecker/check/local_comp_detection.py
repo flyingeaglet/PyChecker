@@ -10,6 +10,8 @@ def detect_local_comp_detection(path):
     python_requires = analysis_setup_python_requires(code)
     use_sys_version_info = analysis(path, analysis_sys_version_info)
     if use_sys_version_info and not python_requires:
+        # 1. sys.version_info is used in comparison expressions
+        # 2. setup() function does not have the param 'python_requires'
         return True
     return False
 

@@ -58,6 +58,7 @@ def parse_stmt(node, version_info_ids, this_ast):
         if parse_expr(node.test, version_info_ids, this_ast):
             if parse_if_context(node, this_ast):
                 # TODO: Something should be done for other cases?
+                # if the program not raises error or not exits in if-body, it should not be considered further
                 return True
         if parse_body(node.body, version_info_ids, this_ast):
             return True
@@ -96,6 +97,8 @@ def is_finish_stmt(node, this_ast):
 
 
 def parse_body(body, version_info_ids, this_ast):
+    # whether sys.version_info is used in comparison expressions
+    # ast related: refer to Python doc >> ast
     for node in body:
         if parse_stmt(node, version_info_ids, this_ast):
             return True
@@ -107,6 +110,10 @@ def analysis_sys_version_info(path, **kwargs):
         code = "".join(f.readlines())
     # root = ast.parse(code)
     body, this_ast = ast_parse(code)
+    # sys.version_info candidates
+    # import sys -> candidate: sys.version_info
+    # from sys import version_info -> candidate: version_info
+    # TODO: refactor with functions in common
     version_info_ids = list()
     for node in body:
         if isinstance(node, this_ast.Import):

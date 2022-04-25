@@ -8,6 +8,7 @@ from compare_string_version import compareVersion
 
 
 def ast_parse(code):
+    # ast related: refer to Python doc >> ast
     try:
         body = ast39.parse(code).body
         this_ast = ast39
@@ -21,6 +22,7 @@ def ast_parse(code):
 
 
 def parse_custom_modules(path):
+    # extract modules implement by the project itself
     modules = list()
     filenames = os.listdir(path)
     for filename in filenames:
@@ -51,7 +53,6 @@ def parse_body(body, this_ast, local_modules, need_parse_func):
         elif stmt.__class__ in [this_ast.For, this_ast.While, ast39.AsyncFor, this_ast.With, ast39.AsyncWith]:
             local_modules = parse_body(stmt.body, this_ast, local_modules, False)
         elif stmt.__class__ in [this_ast.FunctionDef, this_ast.ClassDef, ast39.AsyncFunctionDef] and need_parse_func:
-            # only parse func and class in setup.py
             local_modules = parse_body(stmt.body, this_ast, local_modules, False)
         elif stmt.__class__ == this_ast.If:
             local_modules = parse_body(stmt.body, this_ast, local_modules, False)
@@ -70,6 +71,7 @@ def parse_local_import(code, local_tops, need_parse_func):
 
 
 def parse_import_modules(code, need_parse_func):
+    # extract all imported modules
     modules = set()  # {(module name, level), ...}
     body, this_ast = ast_parse(code)
     if not body:
@@ -126,16 +128,18 @@ def analysis(path, func, **kwargs):
     is_setup = True
     visited = set()
     while targets:
-        kwargs |= {"is_setup": is_setup}  # is_setup = True only at the first time(setup.py)
+        kwargs |= {"is_setup": is_setup}  # is_setup = True only at the first time (parse setup.py)
         path = targets.popleft()
         visited.add(path)
         file = open(path)
         code = "".join(file.readlines())
         file.close()
-        if func(path, **kwargs):
+        if func(path, **kwargs):  # analyze current file
             return True
+        # analyze imported local modules
         imported_local_modules = parse_local_import(code, local_tops, is_setup)
         imported_local_modules = parse_relative_import(imported_local_modules, path, root)
+        # find local modules' files, add then to visit queue
         new_paths = parse_local_path(imported_local_modules, root)
         for new_path in new_paths:
             if new_path in visited:

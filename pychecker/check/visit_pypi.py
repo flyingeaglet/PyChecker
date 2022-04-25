@@ -8,16 +8,16 @@ import tarfile
 import os
 
 
-metadata_cache_path = "/tmp/metadata_cache.json"
-pkgver_cache_path = "/tmp/pkgver_cache.json"
+metadata_cache_path = "/tmp/metadata_cache.json"  # cache metadata
+pkgver_cache_path = "/tmp/pkgver_cache.json"  # cache pkg-ver
 metadata_cache = read_object_from_file(metadata_cache_path)
 if not metadata_cache:
     metadata_cache = dict()
 pkgver_cache = read_object_from_file(pkgver_cache_path)
 if not pkgver_cache:
     pkgver_cache = dict()
-DEPS = "requires_dist"
-COMP = "requires_python"
+DEPS = "requires_dist"  # dep field in metadata
+COMP = "requires_python"  # comp field in metadata
 
 
 def get_urls(pkg, ver):
@@ -32,6 +32,7 @@ def get_urls(pkg, ver):
 
 
 def parse_whl_comp(pkg, ver):
+    # parse comp Python versions of pkg ver's wheel resources
     urls = get_urls(pkg, ver)
 
     pyver = set()
@@ -57,12 +58,13 @@ def parse_whl_comp(pkg, ver):
 
 def get_pkg_versions(pkg, cache=True):
     if cache:
+        # cache visited pkg in a local dict
         try:
             versions = pkgver_cache[pkg]
             return versions
         except KeyError:
             pass
-
+    # query PyPI for versions
     url = f"https://pypi.org/pypi/{pkg}/json"
     content = crawl_content(url)
     if not content:
@@ -71,6 +73,7 @@ def get_pkg_versions(pkg, cache=True):
     versions = sorted(versions, key=cmp_to_key(compare_version))
 
     if cache:
+        # save info
         pkgver_cache[pkg] = versions
         write_object_to_file(pkgver_cache_path, pkgver_cache)
     return versions
@@ -115,10 +118,12 @@ def get_metadata(pkg, ver, cache=True):
         metadata_cache[pkg][ver][DEPS] = metadata[DEPS]
         metadata_cache[pkg][ver][COMP] = metadata[COMP]
         write_object_to_file(metadata_cache_path, metadata_cache)
-    return {DEPS: metadata[DEPS], COMP: metadata[COMP]}  # simplify
+    return {DEPS: metadata[DEPS], COMP: metadata[COMP]}  # simplify, return useful results
 
 
 def download_extract_deps(url):
+    # download the source code archive, and extract its requires.txt(or requirements.txt)
+    # find the download url
     fileurl = url["url"]
     filename = url["filename"]
     content = crawl_content(fileurl)
@@ -127,6 +132,8 @@ def download_extract_deps(url):
     tmp_path = os.path.join("/tmp", filename)
     with open(tmp_path, "wb") as f:
         f.write(content)
+
+    # unzip, extract requires.txt
     if tmp_path.endswith(".whl") or tmp_path.endswith(".zip"):
         archive = zipfile.ZipFile(tmp_path)
         require_content = get_require_content_zip(archive)
@@ -174,7 +181,7 @@ def preprocess_require_content(content):
         if not line:
             continue  # empty line
         if line.startswith("["):
-            break  # extra deps
+            break  # extra deps, stop
         if "[" in line:
             line = line.split("[")[0]  # ignore extra requires now
         if line.endswith("\\"):
@@ -194,6 +201,7 @@ def get_source_url(pkg, ver):
 
 
 def download_extract_source(url, target_path, cache_path=config.CACHE_DIR):
+    # download & unzip source code resource
     content = crawl_content(url)
     if not content:
         return None

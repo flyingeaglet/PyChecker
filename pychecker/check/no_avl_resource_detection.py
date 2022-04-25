@@ -16,6 +16,10 @@ def detect_no_avl_resource_pkg(pkg, ver):
 
 
 def detect_no_avl_resource(comp_expr, dep_exprs, visited_lower=None, visited_upper=None):
+    # Algorithm 1
+    # comp_expr: python_requires
+    # dep_exprs: install_requires
+    # visited_*: package-versions already visited. Avoid repeated visits and circulate visits.
     comp_info = parse_comp_expr(comp_expr, config.PY_VERSIONS)
     comp_info = sorted(comp_info, key=cmp_to_key(compare_version))
     if not visited_lower:
@@ -27,28 +31,29 @@ def detect_no_avl_resource(comp_expr, dep_exprs, visited_lower=None, visited_upp
         if not dep:
             continue
         if not lower_comp(dep, lower, comp_info[0], visited_lower):
-            # pass  # to get the full problem domain
-            return True
+            # check whether oldest versions of deps are compatible with the oldest Python version
+            # pass  # uncomment this line and comment the next line to get the full problem domain
+            return True  # no avl resource exists
         if not upper_comp(dep, upper, comp_info[-1], visited_upper):
-            # pass
+            # check whether latest versions of deps are compatible with the latest Python version
+            # pass  # uncomment this line and comment the next line to get the full problem domain
             return True
     return False
 
 
 def lower_comp(pkg, ver, pyver, visited):
-    # print("low", pkg, ver)
-    # if len(visited) > 100:
-    #     return True  # prevent stackoverflow
+    # Algorithm 2
     metadata = get_metadata(pkg, ver)
     if not metadata:
-        return True
+        return True  # failed to locate the package-version, skip.
     dep_exprs = metadata[DEPS]
     comp_expr = metadata[COMP]
     comp_info = parse_comp_expr(comp_expr, config.PY_VERSIONS)
     comp_info = sorted(comp_info, key=cmp_to_key(compare_version))
     if pyver < comp_info[0]:
-        return False
-    visited.add(f"{pkg}#{ver}")
+        return False  # current package-version is not compatible with pyver
+    visited.add(f"{pkg}#{ver}")  # marked as visited
+
     for expr in dep_exprs:
         dep, lower, _ = parse_dep_expr(expr)
         if not dep:
@@ -57,14 +62,12 @@ def lower_comp(pkg, ver, pyver, visited):
         if pkgver in visited:
             continue  # prevent circuit
         if not lower_comp(dep, lower, pyver, visited):
-            return False
-    return True
+            return False  # a transitive dependency is not compatible with pyver
+    return True  # compatible
 
 
 def upper_comp(pkg, ver, pyver, visited):
-    # print("up", pkg, ver)
-    # if len(visited) > 100:
-    #     return True  # prevent stackoverflow
+    # Algorithm 2'
     metadata = get_metadata(pkg, ver)
     if not metadata:
         return True
@@ -88,9 +91,12 @@ def upper_comp(pkg, ver, pyver, visited):
 
 
 def parse_comp_expr(expr, versions):
-    # comp_expr: <=version, >=version, ...
+    # comp_expr: condition1, condition2, ...
+    # condition: symbol version
+    # symbol: >= | <= | > | < | == | != | ~=
     conditions = expr.split(",")
     satisfied_versions = list()
+    # filter versions that satisfy all conditions
     for version in versions:
         satisfied = True
         for condition in conditions:
@@ -103,7 +109,7 @@ def parse_comp_expr(expr, versions):
 
 
 def parse_dep_expr(expr):
-    # dep_expr: pkg (comp_expr) [; condition] | pkg comp_expr [; condition]
+    # dep_expr: pkg[option] (comp_expr) [; condition] | pkg[option] comp_expr [; condition]
     dep, expr = split_dep_expr(expr)
     if not dep:
         return None, None, None
@@ -123,13 +129,16 @@ def split_dep_expr(expr):
     if ";" in expr:
         return None, None  # conditional dependency, not consider now
     try:
+        # pkg[option] (comp_expr)
         condition_start = expr.index("(")
         condition_end = expr.index(")")
     except ValueError:
+        # pkg[option] comp_expr
         condition_start = len(expr)
         condition_end = condition_start
     dep = expr[:condition_start].strip()
     try:
+        # pkg[option]
         option_start = dep.index("[")
         dep = dep[:option_start].strip()
     except ValueError:
@@ -154,6 +163,7 @@ def split_dep_expr(expr):
 
 def judge_condition(version, condition):
     symbols = [">=", "<=", ">", "<", "==", "!=", "~="]
+    # extract symbol in condition
     this_symbol = None
     for symbol in symbols:
         try:
@@ -162,19 +172,20 @@ def judge_condition(version, condition):
             break
         except ValueError:
             continue
-
     if not this_symbol:
         return True  # condition = "", return True
 
+    # the left in condition is version
     compare_to_version = condition.replace(this_symbol, "").strip()
     compare_to_version = compare_to_version.replace("'", "").replace('"', '')
     if this_symbol == "~=":
         this_symbol = ">="
 
+    # TODO: replace eval with if-else
     if "*" not in compare_to_version:
         return eval(f"compare_version('{version}', '{compare_to_version}') {this_symbol} 0")
     else:
-        # consider == and !=
+        # handle *
         aster_ind = compare_to_version.index("*")
         compare_to_version = compare_to_version[:aster_ind]
         tmp_version = version+"."
@@ -187,5 +198,3 @@ def judge_condition(version, condition):
 
     print(version, condition)  # what happened?
     return True
-
-# print(detect_no_avl_resource_pkg("help50", "3.0.5"))

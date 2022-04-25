@@ -1,6 +1,3 @@
-import ast as ast39
-from typed_ast import ast27
-import os
 from pychecker.check.common import ast_parse, parse_import_modules, parse_func_params, get_func
 
 
@@ -9,8 +6,10 @@ def find_setup_candidates(code):
     modules = [module[0] for module in modules]
     candidates = list()
     if "setuptools" in modules:
+        # import setuptools -> candidate: setuptools.setup
         candidates.append("setuptools.setup")
     if "setuptools.setup" in modules:
+        # from setuptools import setup -> candidate: setup
         candidates.append("setup")
     return candidates
 
@@ -24,16 +23,16 @@ def is_setup_call(expr, this_ast, candidates):
 
 
 def analysis_setup_python_requires(code):
-    # root = ast.parse(code)
     body, this_ast = ast_parse(code)
 
     candidates = find_setup_candidates(code)
     if not candidates:
-        return False
+        return False  # setuptools is not imported, skip
 
+    # 1. whether setup function is used; 2. if so, extract its keyword params.
     setup_params = parse_func_params(body, this_ast, "setup", is_setup_call, candidates)
     if not setup_params:
-        return False
+        return False  # setup is not used
 
     for param in setup_params:
         if not param.arg:
