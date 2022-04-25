@@ -10,7 +10,7 @@ desc = open(readme).read()
 
 setup(
     name="pychecker",
-    version="0.0.1a0",
+    version="0.0.2a0",
     description="PyChecker: check whether your project's Require-Python is correct",
     long_description=desc,
     url="https://github.com/PyVCEchecker/PyVCEchecker",
